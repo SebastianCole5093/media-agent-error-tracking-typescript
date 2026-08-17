@@ -1,10 +1,10 @@
 # Keep media-agent failures visible
 
-This small TypeScript loop runs content steps such as transcoding and captioning. Infrai gives the loop one key and one HTTP interface for recording the failure context, so the useful part of the example stays in the agent code.
+Here's a tiny TypeScript loop that runs content steps like transcoding and captioning. Infrai gives you one key and one HTTP interface for recording failure context, so the interesting part of the example stays in your agent code.
 
 ## Run the content path
 
-Use Node 22 or newer and export a key from your shell:
+Grab Node 22 or newer and export a key in your shell:
 
 ```bash
 export INFRAI_API_KEY=your-key
@@ -12,17 +12,17 @@ npm start
 npm test
 ```
 
-The script prints `h264-ready -> captions-ready`; the test exercises the same `runMediaAgent` function without making a network call.
+The script prints `h264-ready -> captions-ready`; the test exercises the same `runMediaAgent` function without hitting the network.
 
 ## The failure boundary
 
-`runMediaAgent` treats each media operation as a named step. When one throws, it sends the exception payload through `infrai.errors.capture` (`POST /v1/errors/capture`) with a fingerprint made from `media-agent` and the step name. Repeated caption failures therefore land in one group while the original exception text and step context remain available for triage.
+`runMediaAgent` treats each media operation as a named step. When a step throws, it ships the exception payload through `infrai.errors.capture` (`POST /v1/errors/capture`) with a fingerprint built from `media-agent` and the step name. So repeated caption failures group together, while the original exception text and step context stay readable for triage.
 
-The client reads the `{ok, data, error, metadata}` envelope and raises the returned error. It also uses an explicit method, a Bearer token from `INFRAI_API_KEY`, exponential backoff for HTTP 429, and an `Idempotency-Key` header generated per capture. There is no SDK dependency: the example is plain REST from any language, shown here with the built-in `fetch` in TypeScript.
+The client reads the `{ok, data, error, metadata}` envelope and throws the returned error. It uses an explicit method, a Bearer token from `INFRAI_API_KEY`, exponential backoff on HTTP 429, and an `Idempotency-Key` header made per capture. No SDK needed: this is plain REST from any language, shown here with the built-in `fetch` in TypeScript.
 
 ## Adapt it to a real agent
 
-Replace the two demo functions with your decoder, renderer, or upload calls. Keep the step name stable: it is the grouping key that makes a long creator workflow readable. The capture call is the only Infrai-specific line at the boundary, so the rest of the loop can remain focused on media output.
+Swap the two demo functions for your decoder, renderer, or upload calls. Keep the step name stable. That name is the grouping key that makes a long creator workflow legible. The capture call is the only Infrai-specific line at the boundary, so the rest of your loop can stay focused on media output.
 
 ## Going to production: Media Agent Error Tracking Typescript
 
